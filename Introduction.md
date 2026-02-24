@@ -160,12 +160,4 @@ Used to **remove data**.
 | 1 | Arun | 85 |
 | 2 | Meena | 90 |
 
----
-
-## 📌 Learning Roadmap (Next Steps)
-1. CREATE TABLE
-2. WHERE condition
-3. Primary Key in SQL
-4. Foreign Key
-5. Joins
 

@@ -1,0 +1,166 @@
+
+Normalization in SQL is a systematic process of organizing the columns (attributes) and tables (relations) of a relational database to minimize data redundancy 
+and improve data integrity. In simpler terms, normalization helps ensure that each piece of data is stored in the best possible place, 
+reducing duplication and making it easier to maintain and update the database.
+
+Why Normalize?
+Reduce Data Redundancy: Storing the same data multiple times can waste space and cause inconsistencies if that data needs to change.
+Improve Data Integrity: Ensures that your data follows certain rules, preventing errors.
+Make Maintenance Easier: Updates, deletions, and insertions become simpler and more efficient when data is well-organized.
+
+Common Normal Forms
+The most commonly taught normal forms are:
+
+First Normal Form (1NF)
+Second Normal Form (2NF)
+Third Normal Form (3NF)
+
+(There are higher normal forms like 4NF and 5NF, but they are more specialized and not always required for most practical applications. 
+Typically, going up to 3NF or BCNF is sufficient.)
+
+
+1. First Normal Form (1NF)
+Definition & Purpose (1NF)
+1NF requires that every column holds only atomic (indivisible) values and that there are no repeating groups.
+Purpose: To ensure each field contains a single piece of data.
+
+Before 
+-- Non-1NF Table: contains multi-valued phone_numbers in a single column
+CREATE TABLE Students_Non1NF (
+    student_id   INT,
+    student_name VARCHAR(100),
+    phone_numbers VARCHAR(100)  -- e.g., '123-4567,987-6543'
+);
+
+-- Sample data insertion (non-atomic phone numbers)
+INSERT INTO Students_Non1NF (student_id, student_name, phone_numbers)
+VALUES (1, 'Alice', '123-4567,987-6543'),
+       (2, 'Bob', '555-1212');
+
+
+After 
+
+-- Main Students table with atomic values
+CREATE TABLE Students (
+    student_id   INT PRIMARY KEY,
+    student_name VARCHAR(100)
+);
+
+-- Separate table for phone numbers, ensuring each phone number is atomic
+CREATE TABLE StudentPhones (
+    student_id INT,
+    phone      VARCHAR(20),
+    PRIMARY KEY (student_id, phone),
+    FOREIGN KEY (student_id) REFERENCES Students(student_id)
+);
+
+-- Insert students
+INSERT INTO Students (student_id, student_name)
+VALUES (1, 'Alice'),
+       (2, 'Bob');
+
+-- Insert phone numbers (each phone number in its own row)
+INSERT INTO StudentPhones (student_id, phone)
+VALUES (1, '123-4567'),
+       (1, '987-6543'),
+       (2, '555-1212');
+
+
+2. Second Normal Form (2NF)
+Definition & Purpose (2NF)
+2NF requires the table to be in 1NF and that all non-key columns are fully functionally dependent on the entire primary key.
+Purpose: To remove partial dependencies (where a column depends on only part of a composite key).
+
+Before 
+-- This table is in 1NF but not in 2NF because course details depend only on course_id.
+CREATE TABLE Enrollment_Non2NF (
+    student_id  INT,
+    course_id   INT,
+    course_name VARCHAR(100),
+    instructor  VARCHAR(100),
+    PRIMARY KEY (student_id, course_id)
+);
+
+-- Sample data insertion
+INSERT INTO Enrollment_Non2NF (student_id, course_id, course_name, instructor)
+VALUES (1, 101, 'Intro to SQL', 'Dr. Smith'),
+       (2, 101, 'Intro to SQL', 'Dr. Smith'),
+       (1, 102, 'Database Design', 'Dr. Jones');
+
+
+After 
+
+-- Table recording enrollments (relationship)
+CREATE TABLE Enrollment (
+    student_id INT,
+    course_id  INT,
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (course_id) REFERENCES Courses(course_id)
+);
+
+-- Table holding course details
+CREATE TABLE Courses (
+    course_id   INT PRIMARY KEY,
+    course_name VARCHAR(100),
+    instructor  VARCHAR(100)
+);
+
+
+-- Insert course details
+INSERT INTO Courses (course_id, course_name, instructor)
+VALUES (101, 'Intro to SQL', 'Dr. Smith'),
+       (102, 'Database Design', 'Dr. Jones');
+
+-- Insert enrollment data
+INSERT INTO Enrollment (student_id, course_id)
+VALUES (1, 101),
+       (2, 101),
+       (1, 102);
+
+
+3. Third Normal Form (3NF)
+Definition & Purpose (3NF)
+3NF requires that the table is in 2NF and that all the columns are directly dependent on the primary key 
+(i.e., no transitive dependencies).
+Purpose: To remove transitive dependencies where a non-key column depends on another non-key column.
+
+Before
+
+-- This table is in 2NF but has a transitive dependency:
+CREATE TABLE Courses_Non3NF (
+    course_id        INT PRIMARY KEY,
+    course_name      VARCHAR(100),
+    instructor       VARCHAR(100),
+    instructor_office VARCHAR(100)
+);
+
+-- Sample data insertion
+INSERT INTO Courses_Non3NF (course_id, course_name, instructor, instructor_office)
+VALUES (101, 'Intro to SQL', 'Dr. Smith', 'Room 101'),
+       (102, 'Database Design', 'Dr. Jones', 'Room 102');
+
+After 
+
+-- Revised Courses table (now 3NF): holds course-specific data
+CREATE TABLE Courses (
+    course_id   INT PRIMARY KEY,
+    course_name VARCHAR(100),
+    instructor  VARCHAR(100),
+    FOREIGN KEY (instructor) REFERENCES Instructors(instructor)
+);
+
+-- New table for instructor details
+CREATE TABLE Instructors (
+    instructor       VARCHAR(100) PRIMARY KEY,
+    instructor_office VARCHAR(100)
+);
+
+-- Insert instructor details
+INSERT INTO Instructors (instructor, instructor_office)
+VALUES ('Dr. Smith', 'Room 101'),
+       ('Dr. Jones', 'Room 102');
+
+-- Insert courses with reference to instructors
+INSERT INTO Courses (course_id, course_name, instructor)
+VALUES (101, 'Intro to SQL', 'Dr. Smith'),
+       (102, 'Database Design', 'Dr. Jones');
